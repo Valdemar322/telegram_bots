@@ -107,6 +107,8 @@ def echo_message(message):
         count_month = date_today.month
         global count_last_month
         count_last_month = 0
+        global count_year
+        count_year = 0
 
 
 @bot.callback_query_handler(func=lambda callback: True)
@@ -122,7 +124,7 @@ def month_generator(callback):
         global count_month
         global count_year
 
-        if date_today.month - count_last_month < 1:
+        if count_month - count_last_month < 1:
             count_year += 1
             count_last_month = 0
             count_month = 12
