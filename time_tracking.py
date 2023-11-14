@@ -105,6 +105,8 @@ def echo_message(message):
                          reply_markup=markup_days)
         global count_month
         count_month = date_today.month
+        global count_last_month
+        count_last_month = 0
 
 
 @bot.callback_query_handler(func=lambda callback: True)
