@@ -137,12 +137,20 @@ def echo_message(message):
             users_with_values[message.chat.id]["hour"] = message.text
             users_with_values[message.chat.id]["date_message.id"].append(message.message_id)
             users_with_values[message.chat.id]["logical_hour_var"] = False
-            tmp_time_id = bot.send_message(message.chat.id, f'Ваша запись отработанного времени, а именно:\n'
+            markup_data = types.InlineKeyboardMarkup()
+            true_data_record = types.InlineKeyboardButton("Запись времени", callback_data="true_data_record")
+            false_data_record = types.InlineKeyboardButton("Я-крабик", callback_data="false_data_record")
+            markup_data.row(true_data_record, false_data_record)
+
+            tmp_time_id = bot.send_message(message.chat.id, f'Пожалуйста перепроверьте ваши данные, а именно:\n'
                                                             f'Количество часов: {users_with_values[message.chat.id]["hour"]}'
+                                                            f'\nКоличество минут: {users_with_values[message.chat.id]["minute"]}'
                                                             f'\nЗа {users_with_values[message.chat.id]["date"]}'
-                                                            f' была успешно отправлена в таблицу учета времени.😉')
+                                                            f'\nЕсли данные верны нажмите кнопку: "Запись времени"'
+                                                            f'\nЕсли данные не верны нажмите кнопку: "Я-крабик"',
+                                           reply_markup=markup_data)
+
             users_with_values[message.chat.id]["date_message.id"].append(tmp_time_id.message_id)
-            users_with_values[message.chat.id]["marked_days"].add(users_with_values[message.chat.id]["date"])
 
         else:
             users_with_values[message.chat.id]["date_message.id"].append(message.message_id)
@@ -157,13 +165,23 @@ def echo_message(message):
             users_with_values[message.chat.id]["minute"] = message.text
             users_with_values[message.chat.id]["date_message.id"].append(message.message_id)
             users_with_values[message.chat.id]["logical_minute_var"] = False
-            tmp_time_id = bot.send_message(message.chat.id, f'Ваша запись отработанного времени, а именно:\n'
+
+            markup_data = types.InlineKeyboardMarkup()
+            true_data_record = types.InlineKeyboardButton("Запись времени ✍️", callback_data="true_data_record")
+            false_data_record = types.InlineKeyboardButton("Я-крабик 🦀", callback_data="false_data_record")
+            markup_data.row(true_data_record, false_data_record)
+
+            tmp_time_id = bot.send_message(message.chat.id, f'Пожалуйста перепроверьте ваши данные, а именно:\n'
                                                             f'Количество часов: {users_with_values[message.chat.id]["hour"]}'
                                                             f'\nКоличество минут: {users_with_values[message.chat.id]["minute"]}'
                                                             f'\nЗа {users_with_values[message.chat.id]["date"]}'
-                                                            f' была успешно отправлена в таблицу учета времени.😉')
+                                                            f'\nЕсли данные верны нажмите кнопку: "Запись времени"'
+                                                            f'\nЕсли данные не верны нажмите кнопку: "Я-крабик"',
+                                           reply_markup=markup_data)
+
             users_with_values[message.chat.id]["date_message.id"].append(tmp_time_id.message_id)
-            users_with_values[message.chat.id]["marked_days"].add(users_with_values[message.chat.id]["date"])
+
+
 
         else:
             users_with_values[message.chat.id]["date_message.id"].append(message.message_id)
@@ -291,7 +309,6 @@ def month_generator(callback):
 
         for tmp_messages_id in users_with_values[callback.from_user.id]["date_message.id"]:
             bot.delete_message(callback.message.chat.id, tmp_messages_id)
-        # users_with_values[callback.from_user.id]["date_message.id"] = []
 
         if users_with_values[callback.from_user.id]["hour_worked_trigger"]:
             for tmp_messages_id in users_with_values[callback.from_user.id]["date_message.id"]:
@@ -376,6 +393,80 @@ def month_generator(callback):
         bot.send_message(callback.message.chat.id,
                          f'Выбери дату в календаре:\n Текущая дата: {month}.{year}',
                          reply_markup=markup_days)
+
+    elif callback.data == "true_data_record":
+        users_with_values[callback.from_user.id]["marked_days"].add(users_with_values[callback.from_user.id]["date"])
+        users_with_values[callback.from_user.id]["date_message.id"].append(users_with_values[callback.from_user.id]["date_message.id"][0]-1)
+        if users_with_values[callback.from_user.id]["date_message.id"]:
+            for tmp_messages_id in users_with_values[callback.from_user.id]["date_message.id"]:
+                bot.delete_message(callback.message.chat.id, tmp_messages_id)
+            users_with_values[callback.from_user.id]["date_message.id"] = []
+
+        markup_days = types.InlineKeyboardMarkup(row_width=len(days_of_week))
+        temp_days_week = []
+        first_day_of_month = calendar.monthrange(users_with_values[callback.from_user.id]["year"],
+                                                 users_with_values[callback.from_user.id]["count_month"] -
+                                                 users_with_values[callback.from_user.id][
+                                                     "count_last_month"])[0]
+        last_day_of_month = calendar.monthrange(users_with_values[callback.from_user.id]["year"],
+                                                users_with_values[callback.from_user.id]["count_month"] -
+                                                users_with_values[callback.from_user.id][
+                                                    "count_last_month"])[-1]
+
+        with_range = 7
+        height_range = 5
+        res = ""
+        temp = 0
+        date_placeholder = 1
+
+        for y in range(height_range):
+            for x in range(temp, temp + with_range):
+                if x < first_day_of_month or x >= last_day_of_month + first_day_of_month:
+                    res += " " + "-"
+                else:
+                    res += str(date_placeholder) + "-"
+                    date_placeholder += 1
+            res += "\n"
+            temp += with_range
+
+        btn_days_placeholder = []
+        temp_str = ""
+        for _ in res:
+            temp_str += _
+            if _ == "\n":
+                temp_str = temp_str.rstrip()
+                temp_str = temp_str[:-1]
+                btn_days_placeholder.append(temp_str.split("-"))
+                temp_str = ""
+
+        for day in days_of_week:
+            temp_days_week.append(types.InlineKeyboardButton(f"{day}", callback_data=f"{day}"))
+
+        month = users_with_values[callback.from_user.id]["count_month"] - \
+                users_with_values[callback.from_user.id][
+                    "count_last_month"]
+        year = users_with_values[callback.from_user.id]["year"]
+
+        for week_num in btn_days_placeholder:
+            for day_num in week_num:
+                data = f"{day_num}.{month}.{year}"
+                if data in users_with_values[callback.from_user.id]["marked_days"]:
+                    temp_days_week.append(types.InlineKeyboardButton(f"📌{day_num}", callback_data=data))
+                else:
+                    temp_days_week.append(types.InlineKeyboardButton(f"{day_num}", callback_data=data))
+        btn_last_month = types.InlineKeyboardButton("< (Прошлый месяц)", callback_data="last_month")
+        btn_next_month = types.InlineKeyboardButton("(Следующий месяц) >", callback_data="next_month")
+        markup_days.add(*temp_days_week)
+        markup_days.row(btn_last_month, btn_next_month)
+        bot.send_message(callback.message.chat.id,
+                         f'Выбери дату в календаре:\n Текущая дата: {month}.{year}',
+                         reply_markup=markup_days)
+
+    elif callback.data == "false_data_record":
+        if users_with_values[callback.from_user.id]["date_message.id"]:
+            for tmp_messages_id in users_with_values[callback.from_user.id]["date_message.id"]:
+                bot.delete_message(callback.message.chat.id, tmp_messages_id)
+            users_with_values[callback.from_user.id]["date_message.id"] = []
 
     else:
         if callback.data[0] != " " and len(callback.data) > 2:
